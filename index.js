@@ -70,6 +70,17 @@ app.delete('/api/persons/:id', (request, response) => {
   
 app.post('/api/persons', (request, response) => {
   const newPerson = request.body;
+
+  if (!newPerson.name || !newPerson.number) {
+    response.status(400).send({error: "Uuden henkilön nimi tai numero puuttuu!" });
+  }
+
+  const personExists = persons.find(person => person.name === newPerson.name);
+
+  if (personExists) {
+    response.status(400).send({error: "Luotava henkilö on jo olemassa järjestelmässä!"});
+  }
+
   const max = 1000000000;
   const id = Math.floor(Math.random()*max);
   newPerson["id"] = id;
