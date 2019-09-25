@@ -43,6 +43,11 @@ app.get('/api/persons/:id', (req, res) => {
   }
 })
 
+app.get('/info', (req, res) => {
+  const currentDate = new Date();
+  res.send(`<p>Phonebook has info for ${persons.length} people</p> <p>${currentDate}<p>`);
+})
+
 app.delete('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id);
   let index = -1;
@@ -58,11 +63,6 @@ app.delete('/api/persons/:id', (request, response) => {
   } else {
     response.status(404).end();
   }
-})
-
-app.get('/info', (req, res) => {
-    const currentDate = new Date();
-    res.send(`<p>Phonebook has info for ${persons.length} people</p> <p>${currentDate}<p>`);
 })
   
 const PORT = 3001
