@@ -1,5 +1,8 @@
 const express = require('express');
 const app = express();
+const bodyParser = require('body-parser');
+
+app.use(bodyParser.json());
 
 let persons = [
     {
@@ -65,6 +68,17 @@ app.delete('/api/persons/:id', (request, response) => {
   }
 })
   
+app.post('/api/persons', (request, response) => {
+  const newPerson = request.body;
+  const max = 1000000000;
+  const id = Math.floor(Math.random()*max);
+  newPerson["id"] = id;
+  persons.push(newPerson);
+
+  response.status(201).end();
+})
+
+
 const PORT = 3001
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
