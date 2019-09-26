@@ -79,7 +79,7 @@ app.delete('/api/persons/:id', (request, response) => {
     persons.splice(index, 1);
     response.status(204).end();
   } else {
-    response.status(404).end();
+    response.status(404).send({error: "Poistettavaa henkilöä ei löytynyt!"});
   }
 })
   
@@ -101,7 +101,7 @@ app.post('/api/persons', (request, response) => {
   newPerson["id"] = id;
   persons.push(newPerson);
 
-  response.status(201).end();
+  response.status(201).send(newPerson);
 })
 
 
