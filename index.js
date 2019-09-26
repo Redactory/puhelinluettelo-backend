@@ -1,7 +1,8 @@
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
-const morgan = require('morgan')
+const morgan = require('morgan');
+const cors = require('cors');
 
 morgan.token('body', function(req, res) {
   if (req.body.name || req.body.number) {
@@ -15,6 +16,7 @@ app.use(bodyParser.json());
 app.use(
   morgan(':method :url :status :res[content-length] - :response-time ms :body')
 );
+app.use(cors());
 
 let persons = [
     {
