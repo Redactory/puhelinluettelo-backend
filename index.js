@@ -77,18 +77,26 @@ app.post('/api/persons', (request, response) => {
     response.status(400).send({error: "Uuden henkilön nimi tai numero puuttuu!" });
   }
 
-  const personExists = persons.find(person => person.name === newPerson.name);
+  Person.find({}).then(result => {
+    const personExists = result.find(person => person.name === newPerson.name);
 
-  if (personExists) {
-    response.status(400).send({error: "Luotava henkilö on jo olemassa järjestelmässä!"});
-  }
-
-  const max = 1000000000;
-  const id = Math.floor(Math.random()*max);
-  newPerson["id"] = id;
-  persons.push(newPerson);
-
-  response.status(201).send(newPerson);
+    if (personExists) {
+      response.status(400).send({error: "Luotava henkilö on jo olemassa järjestelmässä!"});
+    } else {
+      const max = 1000000000;
+      const id = Math.floor(Math.random()*max);
+    
+      const savedPerson = new Person({
+        name: newPerson.name,
+        number: newPerson.number,
+        id: id
+      });
+    
+      savedPerson.save().then(res => {
+        return response.status(201).send(newPerson);
+      });
+    }
+  })  
 })
 
 
