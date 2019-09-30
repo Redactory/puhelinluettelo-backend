@@ -54,20 +54,24 @@ app.get('/info', (req, res) => {
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id);
-  let index = -1;
-  persons.find(element => {    
-    if (element.id === id) {
-      index = persons.indexOf(element);
-    }
-  });  
-
-  if (index >= 0 && index < persons.length) {
-    persons.splice(index, 1);
-    response.status(204).end();
-  } else {
-    response.status(404).send({error: "Poistettavaa henkilöä ei löytynyt!"});
+  if (request.params.id === 'undefined') {
+    return response.status(400).send({error: "Tarjottu ID ei voi olla määrittelemätön."});
   }
+
+  id = Number(request.params.id);
+  if (id === NaN) {
+    return response.status(400).send({error: "Tarjottu ID ei ole validin muotoinen."});
+  }
+
+  Person.find({id: id}).then(result => {
+    if (result.length > 0) {
+      Person.deleteOne({"id": id}, ()=> {
+        response.status(204).send(`${result[0].name} poistettiin listalta.`);
+      });
+    } else {
+      return response.status(404).send({error: "Poistettavaa henkilöä ei löytynyt!"});
+    }
+  });
 })
   
 app.post('/api/persons', (request, response) => {
