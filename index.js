@@ -53,15 +53,17 @@ app.get('/info', (req, res) => {
   res.send(`<p>Phonebook has info for ${persons.length} people</p> <p>${currentDate}<p>`);
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   if (request.params.id === 'undefined') {
-    return response.status(400).send({error: "Tarjottu ID ei voi olla määrittelemätön."});
+    return response.status(400).send({message: "Tarjottu ID ei voi olla määrittelemätön. Yhteystieto on saatettu jo poistaa"});
+    //throw 'Tarjottu ID ei voi olla määrittelemätön.'
   }
 
-  id = Number(request.params.id);
-  if (id === NaN) {
-    return response.status(400).send({error: "Tarjottu ID ei ole validin muotoinen."});
+  if (isNaN(request.params.id)) {
+    return response.status(400).send({message: "Tarjottu ID ei ole numero."});
   }
+
+  const id = Number(request.params.id);
 
   Person.find({id: id}).then(result => {
     if (result.length > 0) {
@@ -69,8 +71,11 @@ app.delete('/api/persons/:id', (request, response) => {
         response.status(204).send(`${result[0].name} poistettiin listalta.`);
       });
     } else {
-      return response.status(404).send({error: "Poistettavaa henkilöä ei löytynyt!"});
+      throw {message: "Poistettava henkilö ei löytynyt!", status: 404};
     }
+  })
+  .catch(error => {
+    next(error);
   });
 })
   
@@ -78,14 +83,14 @@ app.post('/api/persons', (request, response) => {
   const newPerson = request.body;
 
   if (!newPerson.name || !newPerson.number) {
-    response.status(400).send({error: "Uuden henkilön nimi tai numero puuttuu!" });
+    return response.status(400).send({message: "Uuden henkilön nimi tai numero puuttuu!" });
   }
 
   Person.find({}).then(result => {
     const personExists = result.find(person => person.name === newPerson.name);
 
     if (personExists) {
-      response.status(400).send({error: "Luotava henkilö on jo olemassa järjestelmässä!"});
+      throw 'Luotava henkilö on jo olemassa järjestelmässä!';
     } else {
       const max = 1000000000;
       const id = Math.floor(Math.random()*max);
@@ -100,8 +105,22 @@ app.post('/api/persons', (request, response) => {
         return response.status(201).send(newPerson);
       });
     }
+  })
+  .catch(error => {
+    next(error);
   })  
 })
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error);
+  
+  const status = Number(error.status);
+  response.status(status).send({ message: error.message });
+
+  next(error);
+};
+
+app.use(errorHandler);
 
 
 const PORT = process.env.PORT
