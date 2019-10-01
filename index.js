@@ -21,10 +21,12 @@ app.use(
 app.use(cors());
 app.use(express.static('build'));
 
+// ETUSIVU
 app.get('/', (req, res) => {
     res.send('<h1>Hello World!</h1>')
 })
   
+// YHTEYSTIETO LISTAN HAKEMINEN
 app.get('/api/persons', (req, res, next) => {
   let persons = [];
 
@@ -45,6 +47,7 @@ const errorHandlerForPersonListing = (error, request, response, next) => {
 
 app.use(errorHandlerForPersonListing);
 
+// HENKILÖN HAKEMINEN ID:LLÄ
 app.get('/api/persons/:id', (req, res, next) => {
   const id = Number(req.params.id);
   Person.find({id: id}).then(result => {
@@ -75,11 +78,13 @@ const errorHandlerForPersonFetching = (error, request, response, next) => {
 
 app.use(errorHandlerForPersonFetching);
 
+// INFO-SIVU
 app.get('/info', (req, res) => {
   const currentDate = new Date();
   res.send(`<p>Phonebook has info for ${persons.length} people</p> <p>${currentDate}<p>`);
 })
 
+// OLEMASSA OLEVAN HENKILÖN POISTAMINEN
 app.delete('/api/persons/:id', (request, response, next) => {
   if (request.params.id === 'undefined') {
     return response.status(400).send({message: "Tarjottu ID ei voi olla määrittelemätön. Yhteystieto on saatettu jo poistaa"});
@@ -105,6 +110,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
   });
 })
   
+// UUDEN HENKILÖN LISÄÄMINEN
 app.post('/api/persons', (request, response) => {
   const newPerson = request.body;
 
@@ -152,6 +158,40 @@ const errorHandler = (error, request, response, next) => {
 
 app.use(errorHandler);
 
+// HENKILÖN NUMERON MUUTTAMINEN
+app.put('/api/persons/:id', (request, response, next) => {
+  if (isNaN(Number(request.params.id))) {
+    throw {status: 400, message: 'Tarjottu ID ei ole oikean muotoinen (numero)'};
+  }
+
+  const id = Number(request.params.id);
+  const personData = request.body;
+  const person = {
+    name: personData.name,
+    number: personData.number
+  }
+
+  Person.findOneAndUpdate({id: id}, person, {new: true})
+    .then(result => {
+      response.json(result.toJSON());
+    })
+    .catch(error => next(error))
+})
+
+const numberUpdateErrorHandling = (error, request, response, next) => {
+  console.error(error);
+  
+  if (!isNaN(error.status)) {
+    const status = Number(error.status);
+    response.status(status).send({ message: error.message });
+  } else {
+    response.status(500).send({message: error.message})
+  }
+
+  next(error);
+};
+
+app.use(numberUpdateErrorHandling);
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
