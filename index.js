@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
     res.send('<h1>Hello World!</h1>')
 })
   
-app.get('/api/persons', (req, res) => {
+app.get('/api/persons', (req, res, next) => {
   let persons = [];
 
   Person.find({}).then(result => {
@@ -34,19 +34,46 @@ app.get('/api/persons', (req, res) => {
     })
 
     res.json(persons);
-  })
+  }).catch(error => next(error))
 })
 
-app.get('/api/persons/:id', (req, res) => {
+const errorHandlerForPersonListing = (error, request, response, next) => {
+  console.error(error);
+  
+  return response.status(500).send({message: 'Palvelimella tapahtui virhe josta syystä yhteystietoja ei voi listata.'})
+};
+
+app.use(errorHandlerForPersonListing);
+
+app.get('/api/persons/:id', (req, res, next) => {
   const id = Number(req.params.id);
-  const person = persons.find(element => element.id === id);
-
-  if (person) {
-    res.json(person);
-  } else {
-    res.status(404).end();
-  }
+  Person.find({id: id}).then(result => {
+    if (result.length > 0) {
+      res.json(result);
+    } else {
+      res.status(404).send({message: 'Haettua henkilöä ei löydetty tietokannasta'});
+    }
+  }).catch(error => {
+    next(error);
+  });
 })
+
+const errorHandlerForPersonFetching = (error, request, response, next) => {
+  console.error(error);
+  
+  if (isNaN(error.status)) {
+    return response.status(400).send({message: 'Annettu henkilö-ID ei ole oikean muotoinen'})
+  }
+
+  if (!isNaN(error.status)) {
+    const status = Number(error.status);
+    response.status(status).send({ message: error.message });
+  }
+
+  next(error);
+};
+
+app.use(errorHandlerForPersonFetching);
 
 app.get('/info', (req, res) => {
   const currentDate = new Date();
@@ -56,7 +83,6 @@ app.get('/info', (req, res) => {
 app.delete('/api/persons/:id', (request, response, next) => {
   if (request.params.id === 'undefined') {
     return response.status(400).send({message: "Tarjottu ID ei voi olla määrittelemätön. Yhteystieto on saatettu jo poistaa"});
-    //throw 'Tarjottu ID ei voi olla määrittelemätön.'
   }
 
   if (isNaN(request.params.id)) {
@@ -114,8 +140,12 @@ app.post('/api/persons', (request, response) => {
 const errorHandler = (error, request, response, next) => {
   console.error(error);
   
-  const status = Number(error.status);
-  response.status(status).send({ message: error.message });
+  if (!isNaN(error.status)) {
+    const status = Number(error.status);
+    response.status(status).send({ message: error.message });
+  } else {
+    response.status(500).send({message: error.message})
+  }
 
   next(error);
 };
