@@ -123,7 +123,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
 })
   
 // UUDEN HENKILÖN LISÄÄMINEN
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const newPerson = request.body;
 
   if (!newPerson.name || !newPerson.number) {
@@ -134,7 +134,7 @@ app.post('/api/persons', (request, response) => {
     const personExists = result.find(person => person.name === newPerson.name);
 
     if (personExists) {
-      throw 'Luotava henkilö on jo olemassa järjestelmässä!';
+      throw {status: 400, message: 'Luotava henkilö on jo olemassa järjestelmässä!'};
     } else {
       const max = 1000000000;
       const id = Math.floor(Math.random()*max);
@@ -160,12 +160,10 @@ const errorHandler = (error, request, response, next) => {
   
   if (!isNaN(error.status)) {
     const status = Number(error.status);
-    response.status(status).send({ message: error.message });
+    return response.status(status).send({ message: error.message });
   } else {
-    response.status(500).send({message: error.message})
+    return response.status(500).send({message: error.message})
   }
-
-  next(error);
 };
 
 app.use(errorHandler);
