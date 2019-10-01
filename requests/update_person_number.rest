@@ -1,0 +1,7 @@
+PUT http://localhost:3001/api/persons/354505690a
+Content-Type: application/json
+
+{
+    "name": "Teemu Matvejeff",
+    "number": "111-222-333-444"
+}

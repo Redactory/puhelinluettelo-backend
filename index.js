@@ -79,10 +79,22 @@ const errorHandlerForPersonFetching = (error, request, response, next) => {
 app.use(errorHandlerForPersonFetching);
 
 // INFO-SIVU
-app.get('/info', (req, res) => {
+app.get('/info', (req, res, next) => {
   const currentDate = new Date();
-  res.send(`<p>Phonebook has info for ${persons.length} people</p> <p>${currentDate}<p>`);
+
+  Person.find({}).then(result => {
+    res.send(`<p>Phonebook has info for ${result.length} people</p> <p>${currentDate}<p>`);
+  })
+  .catch(error => next(error))
 })
+
+const errorHandlerForInfo = (error, request, response, next) => {
+  console.error(error);
+  
+  return response.status(500).send('<h2>Yhteystietojen lukumäärän laskeminen ei onnistunut jostain syystä eikä sivua voi näyttää</h2>');
+};
+
+app.use(errorHandlerForInfo);
 
 // OLEMASSA OLEVAN HENKILÖN POISTAMINEN
 app.delete('/api/persons/:id', (request, response, next) => {
