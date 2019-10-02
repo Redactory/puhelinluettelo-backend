@@ -147,7 +147,8 @@ app.post('/api/persons', (request, response, next) => {
     
       savedPerson.save().then(res => {
         return response.status(201).send(newPerson);
-      });
+      })
+      .catch(error => next(error));
     }
   })
   .catch(error => {
@@ -158,6 +159,10 @@ app.post('/api/persons', (request, response, next) => {
 const errorHandler = (error, request, response, next) => {
   console.error(error);
   
+  if (error.name === 'ValidationError') {
+    return response.status(400).json({ message: error.message })
+  }
+
   if (!isNaN(error.status)) {
     const status = Number(error.status);
     return response.status(status).send({ message: error.message });
@@ -176,12 +181,22 @@ app.put('/api/persons/:id', (request, response, next) => {
 
   const id = Number(request.params.id);
   const personData = request.body;
-  const person = {
+  const person = new Person({
     name: personData.name,
     number: personData.number
+  });
+
+  const validation = person.validateSync();
+  if (typeof validation !== undefined) {
+    throw validation;
   }
 
-  Person.findOneAndUpdate({id: id}, person, {new: true})
+  const validatedPerson = {
+    name: personData.name,
+    number: personData.number
+  };
+
+  Person.findOneAndUpdate({id: id}, validatedPerson, {new: true})
     .then(result => {
       response.json(result.toJSON());
     })
@@ -189,13 +204,15 @@ app.put('/api/persons/:id', (request, response, next) => {
 })
 
 const numberUpdateErrorHandling = (error, request, response, next) => {
-  console.error(error);
-  
+  if (error.name === 'ValidationError') {
+    return response.status(400).json({ message: error.message });
+  }
+
   if (!isNaN(error.status)) {
     const status = Number(error.status);
     response.status(status).send({ message: error.message });
   } else {
-    response.status(500).send({message: error.message})
+    response.status(500).send({message: error.message});
   }
 
   next(error);
